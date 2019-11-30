@@ -30,6 +30,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -45,7 +47,6 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -82,13 +83,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     TextView UserText;
     ImageView Capture;
     Spinner spinner;
-    //ProgressBar pb;
+    ProgressBar pb;
 
     LocationManager locationManager;
     Location location;
     String address = "", imageFilename;
     Uri imageFileUri;
-    String filePath, name;
+    String phoneNumber, name;
 
     Button Report, Camera, Feeds;
     EditText ReportText;
@@ -97,6 +98,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     Bitmap bitmap;
     Date date;
     File mImageFile;
+
+    RelativeLayout rl;
 
     private String messagingToken;
 
@@ -107,11 +110,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         mAuth = FirebaseAuth.getInstance();
         currentUser = mAuth.getCurrentUser();
+        Log.d(TAG, "onCreate: " + currentUser);
         db = FirebaseFirestore.getInstance();
 
         if (currentUser == null) {
+            Log.d(TAG, "onCreate: Entering SignInActivity");
             startActivity(new Intent(MainActivity.this, SignInActivity.class));
         } else {
+            getMessagingToken();
             db.collection("users")
                     .get()
                     .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
@@ -133,8 +139,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         hideNavigationbar();
 
-        getMessagingToken();
-
         updateLocation();
 
         authorities = getApplicationContext().getPackageName() + ".fileprovider";
@@ -146,8 +150,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         Feeds = findViewById(R.id.Feeds);
         Capture = findViewById(R.id.ImageViewMain);
         spinner = findViewById(R.id.Spinner);
-//        pb = findViewById(R.id.progressBar2);
-//        pb.setVisibility(View.INVISIBLE);
+        pb = findViewById(R.id.progressBar2);
+        pb.setVisibility(View.INVISIBLE);
 
         mStorageRef = FirebaseStorage.getInstance().getReference();
         imagesStorageRef = mStorageRef.child("images");
@@ -164,6 +168,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             public void onClick(View v) {
                 try {
+                    pb.setVisibility(View.VISIBLE);
                     SendReport();
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -327,9 +332,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 //        }
     }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+        hideNavigationbar();
+    }
+
     public void SendAfterUpload() {
         String listadd[] = address.split(",");
         int i = listadd.length;
+        int j = listadd[i - 2].split(" ").length;
 
         Map<String, String> name1 = new HashMap<>();
         name1.put("display", name);
@@ -342,7 +354,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         report.put("lat", location.getLatitude());
         report.put("lon", location.getLongitude());
         report.put("loc", new GeoPoint(location.getLatitude(), location.getLongitude()));
-        report.put("postalCode", listadd[i - 2].split(" ")[2]);
+        report.put("postalCode", listadd[i - 2].split(" ")[j - 1]);
         report.put("report", ReportText.getText().toString());
         report.put("report_type", spinner.getSelectedItem());
         report.put("name", name1);
@@ -352,12 +364,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
         db.collection("reports")
-                .add(report)
-                .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+                .document(String.valueOf(System.currentTimeMillis()))
+                .set(report)
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
-                    public void onSuccess(DocumentReference documentReference) {
-                        Toast.makeText(MainActivity.this, "Report sent successfully", Toast.LENGTH_SHORT);
-                        ReportText.setText("");
+                    public void onSuccess(Void aVoid) {
+                        Toast.makeText(MainActivity.this, "Report sent successfully", Toast.LENGTH_SHORT).show();
+                        pb.setVisibility(View.INVISIBLE);
                     }
                 })
                 .addOnFailureListener(new OnFailureListener() {
@@ -521,7 +534,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         locationRequest = new LocationRequest();
         locationRequest.setInterval(LOC_UPDATE_INTERVAL_DURATION)
                 .setFastestInterval(LOC_UPDATE_INTERVAL_DURATION_SMALLEST)
-                .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+                .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
+                .setSmallestDisplacement(50);
 
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {

@@ -16,6 +16,7 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.util.Log;
+import android.view.View;
 import android.widget.Toast;
 
 import com.example.areaalert.Others.WomenFeeds;
@@ -30,6 +31,7 @@ import com.google.android.gms.maps.model.TileOverlay;
 import com.google.android.gms.maps.model.TileOverlayOptions;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.GeoPoint;
@@ -55,12 +57,40 @@ public class WomenActivity extends FragmentActivity implements OnMapReadyCallbac
     String address = "";
     LocationManager locationManager;
     String provider;
+    FloatingActionButton w1,w2,w3;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_women);
+        w1=findViewById(R.id.WomenFeeds);
+        w2=findViewById(R.id.WomenForum);
+        w3=findViewById(R.id.WomenNumber);
 
+        w1.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent=new Intent(WomenActivity.this,WomenFeeds.class);
+                startActivity(intent);
+            }
+        });
+        //-------------------------Women Forum-------------------------
+        w2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+
+            }
+        });
+        //--------------------Women Number----------------------------
+        w3.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //Intent intent=new Intent
+                //startActivity(intent);
+
+            }
+        });
         final Vibrator vibe = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
         Log.d("WomenActivity", "onCreate: This is WomenActivity");
@@ -149,7 +179,7 @@ public class WomenActivity extends FragmentActivity implements OnMapReadyCallbac
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
         // Add a marker in Sydney and move the camera
-        LatLng sydney = new LatLng(-34, 151);
+        LatLng sydney = new LatLng(23, 77);
         db.collection("reports")
                 .whereEqualTo("report_type","women")
                 .get().addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
@@ -194,26 +224,31 @@ public class WomenActivity extends FragmentActivity implements OnMapReadyCallbac
                     public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
                         for(QueryDocumentSnapshot queryDocumentSnapshot:queryDocumentSnapshots) {
                             Log.d("Query", queryDocumentSnapshot.toString());
-                            if (queryDocumentSnapshot.get("postalCode").toString()
-                                    .equalsIgnoreCase(postals.get(j))) {
-                                lat = Double.parseDouble(String.valueOf(queryDocumentSnapshot.get("lat")));
-                                lng = Double.parseDouble(String.valueOf(queryDocumentSnapshot.get("lon")));
+                            try {
+                                if (queryDocumentSnapshot.get("postalCode").toString()
+                                        .equalsIgnoreCase(postals.get(j))) {
+                                    lat = Double.parseDouble(String.valueOf(queryDocumentSnapshot.get("lat")));
+                                    lng = Double.parseDouble(String.valueOf(queryDocumentSnapshot.get("lon")));
 
-                                if (num > 0 && num <= 3) {
-                                    WeightedLatLng latLng = new WeightedLatLng(new LatLng(lat, lng), 0.2);
+                                    if (num > 0 && num <= 3) {
+                                        WeightedLatLng latLng = new WeightedLatLng(new LatLng(lat, lng), 0.2);
 
-                                    list.add(latLng);
-                                } else if (num > 3 && num <= 10) {
+                                        list.add(latLng);
+                                    } else if (num > 3 && num <= 10) {
 
-                                    WeightedLatLng latLng = new WeightedLatLng(new LatLng(lat, lng), 0.7);
+                                        WeightedLatLng latLng = new WeightedLatLng(new LatLng(lat, lng), 0.7);
 
-                                    list.add(latLng);
-                                } else if (num > 10) {
-                                    WeightedLatLng latLng = new WeightedLatLng(new LatLng(lat, lng), 1.0);
+                                        list.add(latLng);
+                                    } else if (num > 10) {
+                                        WeightedLatLng latLng = new WeightedLatLng(new LatLng(lat, lng), 1.0);
 
-                                    list.add(latLng);
+                                        list.add(latLng);
+                                    }
+                                    Log.d("Size", String.valueOf(list.size()));
+
                                 }
-                                Log.d("Size", String.valueOf(list.size()));
+                            }catch (Exception e){
+                                Log.d("women safety", "onSuccess: Well we messed up");
                             }
                         }
                                 HeatmapTileProvider mProvider = new HeatmapTileProvider.Builder()
@@ -222,7 +257,7 @@ public class WomenActivity extends FragmentActivity implements OnMapReadyCallbac
                                         .build();
                                 TileOverlay mOverlay = mMap.addTileOverlay(new TileOverlayOptions().tileProvider(mProvider));
                       mMap.setMinZoomPreference(8.0f);
-                        mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(12.9507,77.5848)));
+                        mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(23,77)));
 
 
 

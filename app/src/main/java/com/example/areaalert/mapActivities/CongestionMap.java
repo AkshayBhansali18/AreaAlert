@@ -4,11 +4,15 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentActivity;
 
 import android.content.Intent;
+import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 
+import com.example.areaalert.MainActivity;
 import com.example.areaalert.Others.FeedClass;
 import com.example.areaalert.R;
+import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -20,12 +24,14 @@ import com.google.android.gms.maps.model.TileOverlay;
 import com.google.android.gms.maps.model.TileOverlayOptions;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.maps.android.heatmaps.HeatmapTileProvider;
 
+import java.nio.DoubleBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,15 +43,35 @@ public class CongestionMap extends FragmentActivity implements OnMapReadyCallbac
     ArrayList<String> longs=new ArrayList<>();
     ArrayList<String> reports=new ArrayList<>();
     ArrayList<String> id=new ArrayList<>();
+    FloatingActionButton CongestionFeeds,CongestionReport;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_congestion_map);
-
+        CongestionFeeds=findViewById(R.id.CongestionFeeds);
+        CongestionReport=findViewById(R.id.CongestrionReport);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(CongestionMap.this);
+        CongestionFeeds.setOnClickListener(new View.OnClickListener() {
+
+    //  -------------------------------------Congestion Report-----------------------------
+            @Override
+            public void onClick(View v) {
+               // Intent intent=new Intent(CongestionMap.this,);
+                //startActivity(intent);
+
+            }
+        });
+        CongestionReport.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent=new Intent(CongestionMap.this, MainActivity.class);
+                startActivity(intent);
+            }
+        });
     }
 
 
@@ -63,7 +89,7 @@ public class CongestionMap extends FragmentActivity implements OnMapReadyCallbac
         mMap = googleMap;
         mMap.getUiSettings().setZoomControlsEnabled(true);
         // Add a marker in Sydney and move the camera
-        LatLng sydney = new LatLng(12.9076,77.56615882 );
+        LatLng default_loc = new LatLng(22, 77);
         CollectionReference colref=db.collection("reports");
         colref.get().addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
             @Override
@@ -92,7 +118,7 @@ public class CongestionMap extends FragmentActivity implements OnMapReadyCallbac
             }
         });
 
-        mMap.setMinZoomPreference(13.0f);
+        mMap.setMinZoomPreference(4.0f);
         //Marker click
         mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
             @Override
@@ -105,7 +131,14 @@ public class CongestionMap extends FragmentActivity implements OnMapReadyCallbac
             }
         });
 
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+        try {
+            mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(Double.parseDouble(lats.get(
+                    lats.size() - 1)), Double.parseDouble(longs.get(longs.size() - 1)))));
+        }
+        catch (Exception e){
+            mMap.moveCamera(CameraUpdateFactory.newLatLng(default_loc));
+        }
+        //mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney[0]));
 
     }
     public void addMarkers(ArrayList<String> lats,ArrayList<String> longs,ArrayList<String>report,ArrayList<String> id) {
@@ -114,7 +147,8 @@ public class CongestionMap extends FragmentActivity implements OnMapReadyCallbac
             Log.d("TAG", "addMarkers: " + lats.get(i));
             mMap.addMarker(new MarkerOptions().position(new LatLng(Double.parseDouble(lats.get(i)),Double.parseDouble(longs.get(i))))
                     .title(report.get(i)))
-                    .setTag(id.get(i));        }
+                    .setTag(id.get(i));
+        }
     }
     private void addHeatMap() {
         List<LatLng> list=new ArrayList<>() ;
