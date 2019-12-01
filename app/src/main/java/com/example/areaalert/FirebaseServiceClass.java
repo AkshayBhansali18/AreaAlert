@@ -48,6 +48,17 @@ public class FirebaseServiceClass extends FirebaseMessagingService {
         // Log.d(TAG, "From: " + remoteMessage.getFrom());
 
         // Check if message contains a data payload.
+        notificationManager = NotificationManagerCompat.from(this);
+
+        NotificationCompat.Builder notification = new NotificationCompat.Builder(this, "channel1");
+        Bitmap largeIcon = BitmapFactory.decodeResource(getResources(), R.drawable.mocha);
+        notification.setContentTitle("AD - Need a bite to eat?")
+                .setContentText("Drop by for a quick bite, we are only 500 meters ahead")
+                .setColor(6991948)
+                .setSmallIcon(R.drawable.ic_warning_black_24dp)
+                .setLargeIcon(largeIcon);
+        notificationManager.notify(1, notification.build());
+
         if (remoteMessage.getData().size() > 0) {
             Log.d(TAG, "Message data payload: " + remoteMessage.getData());
             Map<String, String> map;
@@ -59,8 +70,6 @@ public class FirebaseServiceClass extends FirebaseMessagingService {
             String priority = map.get("priority");
             String tag = map.get("tag");
             //String url = map.get("url");
-
-            notificationManager = NotificationManagerCompat.from(this);
 
             if (priority.equals("1")) {
                 buildNotification(CHANNEL_1_ID, map);
